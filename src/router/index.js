@@ -9,6 +9,11 @@ const routes = [
     path: '/',
     name: 'cesiumContainer',
     component: CesiumContainer
+  }，
+  {
+    path: '/1',
+    name: 'cesiumContainer',
+    component: CesiumContainer
   }
 ]
 
