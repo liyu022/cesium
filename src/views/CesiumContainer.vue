@@ -63,55 +63,104 @@ export default {
         minimumLevel: 1,
         show: false
       })
+      // 一： ArcGisMapServerImageryProvider
+      // new Cesium.ArcGisMapServerImageryProvider({
+      //   url: 'https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer',
+      //   enablePickFeatures: false
+      // })
+      // 二： BingMapsImageryProvider 不可用！
+      // new Cesium.BingMapsImageryProvider({
+      //   url: 'https://dev.virtualearth.net',
+      //   key: 'get-yours-at-https://www.bingmapsportal.com/',
+      //   mapStyle: Cesium.BingMapsStyle.AERIAL
+      // })
+      // 三： createOpenStreetMapImageryProvider
+      // Cesium.createOpenStreetMapImageryProvider({
+      //   url: 'https://a.tile.openstreetmap.org/'
+      // })
+      // 四：MapboxImageryProvider  提供了mapbox.satellite、mapbox.streets、mapbox.streets-basic 三种风格 basic不行
+      // new Cesium.MapboxImageryProvider({
+      //   accessToken: 'sk.eyJ1Ijoiam9saW5lZHUiLCJhIjoiY2tsbm9zdHJxMGt3bjJvbDZqZXdrc2FibCJ9.kNgvWaCz2utF6lmE3fOGHA',
+      //   mapId: 'mapbox.streets-basic'
+      // })
     )
-
-    var position = Cesium.Cartesian3.fromDegrees(108.315216, 35.5125612, 100)
-
-    viewer.scene.camera.flyTo({
-      destination: Cesium.Cartesian3.fromDegrees(108.315216, 35.5125612, 10000), // 定位坐标点，建议使用谷歌地球坐标位置无偏差
-      duration: 1 // 定位的时间间隔
-    })
-
-    setTimeout(function () {
-      flyExtent()
-    }, 1000)
-
-    function flyExtent() {
-      // 相机看点的角度，如果大于0那么则是从地底往上看，所以要为负值，这里取-30度
-      var pitch = Cesium.Math.toRadians(-30)
-      // 给定飞行一周所需时间，比如10s, 那么每秒转动度数
-      var angle = 360 / 5
-      // 给定相机距离点多少距离飞行，这里取值为5000m
-      var distance = 5000
-      var startTime = Cesium.JulianDate.fromDate(new Date())
-
-      var stopTime = Cesium.JulianDate.addSeconds(startTime, 5, new Cesium.JulianDate())
-
-      viewer.clock.startTime = startTime.clone() // 开始时间
-      viewer.clock.stopTime = stopTime.clone() // 结速时间
-      viewer.clock.currentTime = startTime.clone() // 当前时间
-      viewer.clock.clockRange = Cesium.ClockRange.CLAMPED // 行为方式
-      viewer.clock.clockStep = Cesium.ClockStep.SYSTEM_CLOCK // 时钟设置为当前系统时间; 忽略所有其他设置。
-      // 相机的当前heading
-      var initialHeading = viewer.camera.heading
-      var Exection = function TimeExecution() {
-        // 当前已经过去的时间，单位s
-        var delTime = Cesium.JulianDate.secondsDifference(viewer.clock.currentTime, viewer.clock.startTime)
-        var heading = Cesium.Math.toRadians(delTime * angle) + initialHeading
-        viewer.scene.camera.setView({
-          destination: position, // 点的坐标
-          orientation: {
-            heading: heading,
-            pitch: pitch
-          }
-        })
-        viewer.scene.camera.moveBackward(distance)
-        if (Cesium.JulianDate.compare(viewer.clock.currentTime, viewer.clock.stopTime) >= 0) {
-          viewer.clock.onTick.removeEventListener(Exection)
-        }
+    // Create an initial camera view
+    // eslint-disable-next-line new-cap
+    var initialPosition = new Cesium.Cartesian3.fromDegrees(104, 30.674512895646692812, 2631.082799425431)
+    // eslint-disable-next-line new-cap
+    var initialOrientation = new Cesium.HeadingPitchRoll.fromDegrees(108, 37.987223091598949054, 0.025883251314954971306)
+    var homeCameraView = {
+      destination: initialPosition,
+      orientation: {
+        heading: initialOrientation.heading,
+        pitch: initialOrientation.pitch,
+        roll: initialOrientation.roll
       }
-      viewer.clock.onTick.addEventListener(Exection)
     }
+    // Set the initial view
+    viewer.scene.camera.setView(homeCameraView)
+    viewer.cesiumWidget.screenSpaceEventHandler.removeInputAction(Cesium.ScreenSpaceEventType.LEFT_DOUBLE_CLICK)
+    createModel('public/SampleData/models/CesiumAir/Cesium_Air.glb', 0.0)
+    function createModel(url, height) {
+      viewer.entities.removeAll()
+      var position = Cesium.Cartesian3.fromDegrees(108.12121, 34.0503706, height)
+      var heading = Cesium.Math.toRadians(135)
+      var pitch = 0
+      var roll = 0
+      var hpr = new Cesium.HeadingPitchRoll(heading, pitch, roll)
+      var orientation = Cesium.Transforms.headingPitchRollQuaternion(position, hpr)
+      var entity = viewer.entities.add({
+        name: url,
+        position: position,
+        orientation: orientation,
+        model: {
+          uri: url,
+          minimumPixelSize: 128,
+          maximumScale: 20000
+        }
+      })
+      viewer.trackedEntity = entity
+    }
+    // setTimeout(function () {
+    //   flyExtent()
+    // }, 1000)
+
+    // function flyExtent() {
+    //   // 相机看点的角度，如果大于0那么则是从地底往上看，所以要为负值，这里取-30度
+    //   var pitch = Cesium.Math.toRadians(-30)
+    //   // 给定飞行一周所需时间，比如10s, 那么每秒转动度数
+    //   var angle = 360 / 5
+    //   // 给定相机距离点多少距离飞行，这里取值为5000m
+    //   var distance = 5000
+    //   var startTime = Cesium.JulianDate.fromDate(new Date())
+
+    //   var stopTime = Cesium.JulianDate.addSeconds(startTime, 5, new Cesium.JulianDate())
+
+    //   viewer.clock.startTime = startTime.clone() // 开始时间
+    //   viewer.clock.stopTime = stopTime.clone() // 结速时间
+    //   viewer.clock.currentTime = startTime.clone() // 当前时间
+    //   viewer.clock.clockRange = Cesium.ClockRange.CLAMPED // 行为方式
+    //   viewer.clock.clockStep = Cesium.ClockStep.SYSTEM_CLOCK // 时钟设置为当前系统时间; 忽略所有其他设置。
+    //   // 相机的当前heading
+    //   var initialHeading = viewer.camera.heading
+    //   var Exection = function TimeExecution() {
+    //     // 当前已经过去的时间，单位s
+    //     var delTime = Cesium.JulianDate.secondsDifference(viewer.clock.currentTime, viewer.clock.startTime)
+    //     var heading = Cesium.Math.toRadians(delTime * angle) + initialHeading
+    //     viewer.scene.camera.setView({
+    //       destination: position, // 点的坐标
+    //       orientation: {
+    //         heading: heading,
+    //         pitch: pitch
+    //       }
+    //     })
+    //     viewer.scene.camera.moveBackward(distance)
+    //     if (Cesium.JulianDate.compare(viewer.clock.currentTime, viewer.clock.stopTime) >= 0) {
+    //       viewer.clock.onTick.removeEventListener(Exection)
+    //     }
+    //   }
+    //   viewer.clock.onTick.addEventListener(Exection)
+    // }
   }
 }
 </script>
